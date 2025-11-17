@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -17,7 +18,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity // Sorgt dafür das die FilterChain überhaupt verwendet wird
+@EnableMethodSecurity // Security auf Methoden level setzen (bsp -> DemoController mit @PreAuthorize)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -33,7 +35,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/*").permitAll() // Login & Registr; /api/auth/login -> not  /api/auth/a/login
                         .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/maintaance/**").hasRole(Role.MANAGER.name())
+                        .requestMatchers("/api/maintenance/**").hasRole(Role.MANAGER.name())
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(
