@@ -4,7 +4,9 @@ import htlkaindorf.springsecuritydemo.auth.AuthRequest;
 import htlkaindorf.springsecuritydemo.auth.AuthResponse;
 import htlkaindorf.springsecuritydemo.entity.Role;
 import htlkaindorf.springsecuritydemo.entity.User;
+import htlkaindorf.springsecuritydemo.exceptions.PasswordWrongException;
 import htlkaindorf.springsecuritydemo.exceptions.UserAlreadyExistsAuthenticationException;
+import htlkaindorf.springsecuritydemo.exceptions.UsernameWrongException;
 import htlkaindorf.springsecuritydemo.repositories.UserRepository;
 import htlkaindorf.springsecuritydemo.services.AuthService;
 import htlkaindorf.springsecuritydemo.services.JwtService;
@@ -15,6 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(AuthRequest request) {
+
+        Optional<User> foundUser = userRepository.findUserByUsername(request.getUsername());
+
+        if (foundUser.isEmpty()) {
+            throw new UsernameWrongException("User " + request.getUsername() + " not found.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), foundUser.get().getPassword())) {
+            throw new PasswordWrongException("Invalid Password.");
+        }
+
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 request.getUsername(),
                 request.getPassword()
@@ -41,7 +56,7 @@ public class AuthServiceImpl implements AuthService {
 
     public AuthResponse register(AuthRequest request) {
         if (userRepository.findUserByUsername(request.getUsername()).isPresent()) {
-            throw new UserAlreadyExistsAuthenticationException("Username already in use!");
+            throw new UserAlreadyExistsAuthenticationException("A user with this email is already registered.");
         }
 
         User newUser = User.builder()

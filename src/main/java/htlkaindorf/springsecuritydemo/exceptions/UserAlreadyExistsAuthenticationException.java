@@ -1,5 +1,7 @@
 package htlkaindorf.springsecuritydemo.exceptions;
 
-public class UserAlreadyExistsAuthenticationException extends RuntimeException {
+import org.springframework.security.core.AuthenticationException;
+
+public class UserAlreadyExistsAuthenticationException extends AuthenticationException {
   public UserAlreadyExistsAuthenticationException(String message) {super(message);}
 }
