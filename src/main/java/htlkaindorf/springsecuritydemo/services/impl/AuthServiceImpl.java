@@ -9,6 +9,8 @@ import htlkaindorf.springsecuritydemo.exceptions.UserAlreadyExistsAuthentication
 import htlkaindorf.springsecuritydemo.exceptions.UsernameWrongException;
 import htlkaindorf.springsecuritydemo.repositories.UserRepository;
 import htlkaindorf.springsecuritydemo.services.AuthService;
+import htlkaindorf.springsecuritydemo.services.EmailService;
+import htlkaindorf.springsecuritydemo.services.EmailVerificationService;
 import htlkaindorf.springsecuritydemo.services.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,6 +30,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
+    private final EmailService emailService;
 
     @Override
     public AuthResponse login(AuthRequest request) {
@@ -54,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(jwt);
     }
 
-    public AuthResponse register(AuthRequest request) {
+    public void register(AuthRequest request) {
         if (userRepository.findUserByUsername(request.getUsername()).isPresent()) {
             throw new UserAlreadyExistsAuthenticationException("A user with this email is already registered.");
         }
@@ -66,7 +70,11 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         userRepository.save(newUser);
-        return login(request);
+
+        emailService.sendVerificationEmail(
+                newUser.getUsername(),
+                emailVerificationService.generateVerificationToken(newUser)
+        );
     }
 
 }
