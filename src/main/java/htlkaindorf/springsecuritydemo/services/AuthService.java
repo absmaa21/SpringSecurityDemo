@@ -9,4 +9,6 @@ public interface AuthService {
 
     void register(AuthRequest request);
 
+    void verifyEmail(String token);
+
 }

@@ -4,10 +4,13 @@ import htlkaindorf.springsecuritydemo.auth.AuthRequest;
 import htlkaindorf.springsecuritydemo.auth.AuthResponse;
 import htlkaindorf.springsecuritydemo.entity.Role;
 import htlkaindorf.springsecuritydemo.entity.User;
+import htlkaindorf.springsecuritydemo.entity.VerificationToken;
+import htlkaindorf.springsecuritydemo.exceptions.EmailVerificationTokenExpired;
 import htlkaindorf.springsecuritydemo.exceptions.PasswordWrongException;
 import htlkaindorf.springsecuritydemo.exceptions.UserAlreadyExistsAuthenticationException;
 import htlkaindorf.springsecuritydemo.exceptions.UsernameWrongException;
 import htlkaindorf.springsecuritydemo.repositories.UserRepository;
+import htlkaindorf.springsecuritydemo.repositories.VerificationTokenRepository;
 import htlkaindorf.springsecuritydemo.services.AuthService;
 import htlkaindorf.springsecuritydemo.services.EmailService;
 import htlkaindorf.springsecuritydemo.services.EmailVerificationService;
@@ -20,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -32,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationService emailVerificationService;
     private final EmailService emailService;
+    private final VerificationTokenRepository verificationTokenRepository;
 
     @Override
     public AuthResponse login(AuthRequest request) {
@@ -75,6 +80,18 @@ public class AuthServiceImpl implements AuthService {
                 newUser.getUsername(),
                 emailVerificationService.generateVerificationToken(newUser)
         );
+    }
+
+
+    public void verifyEmail(String token) {
+        VerificationToken vToken = verificationTokenRepository.getVerificationTokenByToken(token);
+
+        if (!vToken.getExpiryDate().isAfter(LocalDateTime.now())) {
+            throw new EmailVerificationTokenExpired("The Verification Token is expired!");
+        }
+
+        vToken.getUser().setEnabled(true);
+        userRepository.save(vToken.getUser());
     }
 
 }
