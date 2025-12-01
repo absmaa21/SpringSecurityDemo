@@ -43,7 +43,7 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         if (ex instanceof InsufficientResourcesException){
             return "Access denied: authentication is insufficient!";
         } else if (ex instanceof DisabledException) {
-            return "Access denied: user account disabled";
+            return "Your account is not enabled - verify your email first!";
         } else if (ex instanceof LockedException){
             return "Access denied: user account locked";
         } else if (ex  instanceof CsrfException) {

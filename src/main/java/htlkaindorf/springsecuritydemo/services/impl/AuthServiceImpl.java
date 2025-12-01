@@ -92,6 +92,7 @@ public class AuthServiceImpl implements AuthService {
 
         vToken.getUser().setEnabled(true);
         userRepository.save(vToken.getUser());
+        verificationTokenRepository.delete(vToken);
     }
 
 }
