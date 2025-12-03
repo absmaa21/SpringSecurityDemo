@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Verify your account</title>
+
+    <style>
+        /* Inlined styles work best for email clients */
+        .btn {
+            background-color: #4CAF50;
+            color: white !important;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+        .container {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h2>Hello <span th:text="${name}">User</span>,</h2>
+
+    <p>Please click the button below to verify your account:</p>
+
+    <p style="margin: 20px 0;">
+        <a th:href="${verificationUrl}" class="btn">Verify Account</a>
+    </p>
+
+    <p>If the button doesn't work, copy this link into your browser:</p>
+
+    <p>
+        <a th:href="${verificationUrl}" th:text="${verificationUrl}">
+            If you see this, something went wrong.
+        </a>
+    </p>
+
+    <br>
+
+    <p>Kind regards,<br>POS Company</p>
+</div>
+</body>
+</html>
