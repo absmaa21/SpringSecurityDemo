@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Reset your password</title>
+
+    <style>
+        /* Inlined styles work best for email clients */
+        .btn {
+            background-color: #f44336;
+            color: white !important;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+        .container {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            line-height: 1.4;
+        }
+
+        .note {
+            color: #555;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h2>Hello <span th:text="${name}">User</span>,</h2>
+
+    <p>
+        We received a request to reset the password for your account.
+        Click the button below to choose a new password.
+    </p>
+
+    <p style="margin: 20px 0;">
+        <a th:href="${resetUrl}" class="btn">Reset Password</a>
+    </p>
+
+    <p class="note">
+        This link is valid for a limited time. If you did not request a password
+        reset, you can safely ignore this email.
+    </p>
+
+    <p>If the button doesn't work, copy this link into your browser:</p>
+
+    <p>
+        <a th:href="${resetUrl}" th:text="${resetUrl}">
+            If you see this, something went wrong.
+        </a>
+    </p>
+
+    <br>
+
+    <p>
+        Kind regards,<br>
+        POS Company
+    </p>
+
+</div>
+</body>
+</html>

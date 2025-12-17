@@ -36,4 +36,26 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+
+    @Override
+    public void sendResetEmail(String email, String token) {
+
+        MimeMessage msg = javaMailSender.createMimeMessage();
+        String resetPasswordUrl = "http://localhost:8080/api/auth/reset-pw?token=" + token;
+        String htmlContent = emailTemplateService.buildResetPw(email, resetPasswordUrl);
+
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(msg, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, "UTF-8");
+            helper.setFrom("noreply@google.com");
+            helper.setTo(email);
+            helper.setSubject("Password Reset");
+            helper.setText(htmlContent, true);
+            javaMailSender.send(msg);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+
 }

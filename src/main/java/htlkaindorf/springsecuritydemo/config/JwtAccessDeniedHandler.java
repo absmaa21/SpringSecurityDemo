@@ -1,6 +1,7 @@
 package htlkaindorf.springsecuritydemo.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import htlkaindorf.springsecuritydemo.exceptions.PasswordResetTokenExpired;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,25 +34,27 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         Map<String, Object> responseBody = new HashMap<>();
 
         responseBody.put("status", HttpServletResponse.SC_FORBIDDEN);
-        responseBody.put("error",  accessDeniedException.getMessage());
+        responseBody.put("error", resolveErrorMessage(accessDeniedException));
 
         responseBody.put("path", request.getRequestURL());
         mapper.writeValue(response.getWriter(), responseBody);
     }
 
-    private String resolveErrorMessage(Exception ex){
-        if (ex instanceof InsufficientResourcesException){
+    private String resolveErrorMessage(Exception ex) {
+        if (ex instanceof InsufficientResourcesException) {
             return "Access denied: authentication is insufficient!";
         } else if (ex instanceof DisabledException) {
             return "Your account is not enabled - verify your email first!";
-        } else if (ex instanceof LockedException){
+        } else if (ex instanceof LockedException) {
             return "Access denied: user account locked";
-        } else if (ex  instanceof CsrfException) {
+        } else if (ex instanceof CsrfException) {
             return "Access denied: invalid or missing CSRF token.";
-        } else if (ex instanceof AccountStatusException){
+        } else if (ex instanceof AccountStatusException) {
             return "Access denied: account status invalid.";
-        } else{
-            return"Forbidden: you do not have the required permission";
+        } else if (ex instanceof PasswordResetTokenExpired) {
+            return "Password Reset Token invalid or expired!";
+        } else {
+            return "Forbidden: you do not have the required permission";
         }
     }
 }

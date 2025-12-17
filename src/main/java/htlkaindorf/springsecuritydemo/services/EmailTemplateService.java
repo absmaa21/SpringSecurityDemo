@@ -18,4 +18,11 @@ public class EmailTemplateService {
         return templateEngine.process("/verify-account", context);
     }
 
+    public String buildResetPw(String email, String resetPwUrl) {
+        Context context = new Context();
+        context.setVariable("name", email.split("@")[0]);
+        context.setVariable("resetUrl", resetPwUrl);
+        return templateEngine.process("/reset-pw", context);
+    }
+
 }

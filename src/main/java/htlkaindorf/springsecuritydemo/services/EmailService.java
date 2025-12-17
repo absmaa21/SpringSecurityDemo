@@ -4,4 +4,6 @@ public interface EmailService {
 
     public void sendVerificationEmail(String email, String token);
 
+    public void sendResetEmail(String email, String token);
+
 }
