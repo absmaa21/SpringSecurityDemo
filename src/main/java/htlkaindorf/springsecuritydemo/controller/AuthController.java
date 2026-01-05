@@ -19,7 +19,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody AuthRequest authRequest
     ){
-        return ResponseEntity.ok(authService.login(authRequest));
+        return ResponseEntity.ok(authService.signin(authRequest));
     }
 
     @PostMapping("/signin")
@@ -45,15 +45,6 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(
-            @Valid @RequestBody AuthRequest authRequest
-    ){
-        authService.register(authRequest);
-        return ResponseEntity.ok("Successfully registered! Check Email for verification.");
-    }
-
-    // Alias endpoint for /register - required by specification
-    @PostMapping("/signup")
-    public ResponseEntity<String> signup(
             @Valid @RequestBody AuthRequest authRequest
     ){
         authService.register(authRequest);
