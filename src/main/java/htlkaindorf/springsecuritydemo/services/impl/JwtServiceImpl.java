@@ -18,6 +18,8 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
 
+    private static final long MFA_TOKEN_EXPIRATION_MS = 600000; // 10 minutes
+
     // Wichtig für PLF (wie man aus application.properties liest)
     @Value("${application.security.jwt.secret}")
     private String secretKey;
@@ -38,9 +40,32 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
+    public String generateMfaToken(User user) {
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("role", user.getRole().name())
+                .claim("type", "mfa")
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + MFA_TOKEN_EXPIRATION_MS))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    @Override
     public boolean isTokenValid(String token, UserDetails userDetails) {
         String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    }
+
+    @Override
+    public boolean isMfaToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Object type = claims.get("type");
+            return type != null && "mfa".equals(type);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

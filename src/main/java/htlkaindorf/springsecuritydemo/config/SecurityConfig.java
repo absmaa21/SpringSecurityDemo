@@ -25,6 +25,8 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final MfaAuthenticationFilter mfaAuthenticationFilter;
+    private final RateLimitingFilter rateLimitingFilter;
     private final JwtUnauthorizedEndpoint unauthorizedEndPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
@@ -45,6 +47,8 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(unauthorizedEndPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler))
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(mfaAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         // Reihenfolge wichtig

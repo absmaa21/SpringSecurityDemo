@@ -6,4 +6,6 @@ public interface EmailService {
 
     public void sendResetEmail(String email, String token);
 
+    public void sendOtpEmail(String email, String otp);
+
 }
