@@ -51,6 +51,7 @@ public class AuthController {
         return ResponseEntity.ok("Successfully registered! Check Email for verification.");
     }
 
+    // Alias endpoint for /register - required by specification
     @PostMapping("/signup")
     public ResponseEntity<String> signup(
             @Valid @RequestBody AuthRequest authRequest

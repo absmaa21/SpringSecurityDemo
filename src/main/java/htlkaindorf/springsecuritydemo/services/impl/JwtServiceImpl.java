@@ -18,6 +18,8 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
 
+    private static final long MFA_TOKEN_EXPIRATION_MS = 600000; // 10 minutes
+
     // Wichtig für PLF (wie man aus application.properties liest)
     @Value("${application.security.jwt.secret}")
     private String secretKey;
@@ -44,7 +46,7 @@ public class JwtServiceImpl implements JwtService {
                 .claim("role", user.getRole().name())
                 .claim("type", "mfa")
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 600000)) // 10 minutes for MFA token
+                .expiration(new Date(System.currentTimeMillis() + MFA_TOKEN_EXPIRATION_MS))
                 .signWith(getSigningKey())
                 .compact();
     }
