@@ -181,36 +181,71 @@ Authorization: Bearer {MFA_TOKEN}
 - **Purpose:** Access protected resources
 - **Scope:** Full application access based on user role
 
-### Security Filters
-1. **MfaAuthenticationFilter:** Validates MFA tokens for `/api/auth/otp-signin`
-2. **JwtAuthenticationFilter:** Validates regular JWTs for protected resources
+### Security Filters (in order)
+1. **RateLimitingFilter:** Prevents brute force attacks on OTP endpoint (10 req/5min per IP)
+2. **MfaAuthenticationFilter:** Validates MFA tokens for `/api/auth/otp-signin`
+3. **JwtAuthenticationFilter:** Validates regular JWTs for protected resources
+
+### Login Security
+- **Failed Attempt Tracking:** Tracks failed login attempts per user
+- **Account Lockout:** 5 failed attempts → 15-minute lockout
+- **Automatic Unlocking:** Lockout expires automatically after duration
+- **Audit Logging:** All login attempts (successful and failed) are logged
+
+### Rate Limiting
+- **Endpoint:** `/api/auth/otp-signin`
+- **Limit:** 10 requests per 5 minutes per IP address
+- **Response:** HTTP 429 (Too Many Requests) when limit exceeded
+- **Purpose:** Prevents brute force attacks on OTP codes
 
 ---
 
 ## Error Responses
 
 ### Invalid Credentials
+```json
+{
+  "timestamp": "2026-01-05T13:20:00",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Invalid username or password"
+}
 ```
-401 Unauthorized
-"User {username} not found." or "Invalid Password."
+
+### Account Locked
+```json
+{
+  "timestamp": "2026-01-05T13:20:00",
+  "status": 403,
+  "error": "Forbidden",
+  "message": "Account is temporarily locked due to multiple failed login attempts. Please try again later."
+}
 ```
 
 ### Invalid MFA Token
-```
-401 Unauthorized
-"Invalid MFA token"
+```json
+{
+  "timestamp": "2026-01-05T13:20:00",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Invalid MFA token"
+}
 ```
 
 ### Invalid or Expired OTP
-```
-500 Internal Server Error
-"Invalid or expired OTP"
+```json
+{
+  "timestamp": "2026-01-05T13:20:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Invalid or expired OTP"
+}
 ```
 
-### Missing Authorization Header
+### Rate Limit Exceeded
 ```
-401 Unauthorized
-"MFA token required"
+429 Too Many Requests
+"Too many requests. Please try again later."
 ```
 
 ---
@@ -259,6 +294,8 @@ The project includes two HTTP test files for IntelliJ IDEA's HTTP Client:
 - Using regular JWT for OTP verification
 - Using MFA token for protected resources
 - Missing authorization header
+- Account lockout after failed attempts
+- Rate limit exceeded
 
 ---
 
@@ -267,50 +304,36 @@ The project includes two HTTP test files for IntelliJ IDEA's HTTP Client:
 ### ✅ OTP Expiration
 - OTP is valid for exactly 5 minutes
 - Expired OTPs are automatically rejected and cleared
+- Automatic cleanup of expired OTP data
 
-### ✅ Rate Limiting (via Spring Security)
-- Security filters prevent brute force attacks
-- Failed attempts are logged
+### ✅ Login Attempt Tracking & Account Lockout
+- Failed login attempts are tracked per user
+- Account locked after 5 failed attempts
+- 15-minute lockout duration
+- Automatic unlocking after lockout period expires
+- Successful login resets failed attempt counter
+- Comprehensive logging of all login attempts
 
-### 🔄 Future Enhancements
-- Log unsuccessful login attempts to database
-- Implement account lockout after multiple failed attempts
-- Add rate-limiting middleware for OTP verification endpoint
-- Implement OTP retry limits (e.g., max 3 attempts)
+### ✅ Rate Limiting
+- Applied to `/api/auth/otp-signin` endpoint
+- Maximum 10 requests per 5 minutes per IP address
+- Returns HTTP 429 (Too Many Requests) when exceeded
+- IP-based tracking with automatic cleanup
+- Prevents brute force attacks on OTP codes
 
----
+### ✅ Enhanced Error Handling
+- Custom exceptions for all error scenarios
+- Global exception handler for consistent error responses
+- Proper HTTP status codes
+- Detailed error messages with timestamps
+- JSON error response format
 
-## Dependencies
-
-- Spring Boot 3.5.7
-- Spring Security
-- Spring Data JPA
-- PostgreSQL
-- JWT (jjwt 0.13.0)
-- JavaMail (spring-boot-starter-mail)
-- Thymeleaf (for email templates)
-
----
-
-## Running the Application
-
-### Prerequisites
-1. PostgreSQL database running on `localhost:5432`
-2. Database named `jwtdb`
-3. Email credentials configured in environment variables:
-   - `SPRING_MAIL_USERNAME`
-   - `SPRING_MAIL_PASSWORD`
-
-### Build and Run
-```bash
-./mvnw clean install
-./mvnw spring-boot:run
-```
-
-### Default Configuration
-- **Port:** 8080
-- **Database:** PostgreSQL (localhost:5432/jwtdb)
-- **Mail Server:** Gmail SMTP
+### 🔄 Possible Future Enhancements
+- Persist login attempts to database for long-term audit
+- Send email alerts on multiple failed login attempts
+- Implement progressive delays on repeated failures
+- Add CAPTCHA after multiple failed attempts
+- SMS-based OTP as alternative to email
 
 ---
 
@@ -321,14 +344,20 @@ The project includes two HTTP test files for IntelliJ IDEA's HTTP Client:
 - **AuthService:** User authentication and MFA workflow
 - **JwtService:** JWT and MFA token generation/validation
 - **EmailService:** Email delivery for OTP and verification
+- **LoginAttemptService:** Track failed logins and account lockouts
 
-### Filters
-- **MfaAuthenticationFilter:** Pre-authenticates MFA tokens
-- **JwtAuthenticationFilter:** Authenticates regular JWTs
+### Filters (in order)
+1. **RateLimitingFilter:** Rate limiting for OTP endpoint
+2. **MfaAuthenticationFilter:** Pre-authenticates MFA tokens
+3. **JwtAuthenticationFilter:** Authenticates regular JWTs
 
 ### Controllers
 - **AuthController:** Authentication endpoints
 - **DemoController:** Protected resource examples
+
+### Exception Handling
+- **GlobalExceptionHandler:** Centralized error handling
+- Custom exceptions for domain-specific errors
 
 ---
 
