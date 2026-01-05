@@ -7,6 +7,10 @@ public interface AuthService {
 
     AuthResponse login(AuthRequest request);
 
+    AuthResponse signin(AuthRequest request);
+
+    AuthResponse verifyOtp(String mfaToken, String otp);
+
     void register(AuthRequest request);
 
     void verifyEmail(String token);

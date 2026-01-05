@@ -15,6 +15,7 @@ import htlkaindorf.springsecuritydemo.services.AuthService;
 import htlkaindorf.springsecuritydemo.services.EmailService;
 import htlkaindorf.springsecuritydemo.services.EmailVerificationService;
 import htlkaindorf.springsecuritydemo.services.JwtService;
+import htlkaindorf.springsecuritydemo.services.OtpService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmailVerificationService emailVerificationService;
     private final EmailService emailService;
     private final VerificationTokenRepository verificationTokenRepository;
+    private final OtpService otpService;
 
     @Override
     public AuthResponse login(AuthRequest request) {
@@ -59,6 +61,63 @@ public class AuthServiceImpl implements AuthService {
         UserDetails user = (UserDetails) authentication.getPrincipal();
 
         String jwt = jwtService.generateToken((User) user);
+
+        return new AuthResponse(jwt);
+    }
+
+    @Override
+    public AuthResponse signin(AuthRequest request) {
+        Optional<User> foundUser = userRepository.findUserByUsername(request.getUsername());
+
+        if (foundUser.isEmpty()) {
+            throw new UsernameWrongException("User " + request.getUsername() + " not found.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), foundUser.get().getPassword())) {
+            throw new PasswordWrongException("Invalid Password.");
+        }
+
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                request.getUsername(),
+                request.getPassword()
+        ));
+
+        UserDetails user = (UserDetails) authentication.getPrincipal();
+
+        // Generate MFA token instead of regular JWT
+        String mfaToken = jwtService.generateMfaToken((User) user);
+
+        // Generate and send OTP
+        String otp = otpService.generateOtp(user.getUsername());
+        emailService.sendOtpEmail(user.getUsername(), otp);
+
+        return new AuthResponse(mfaToken);
+    }
+
+    @Override
+    public AuthResponse verifyOtp(String mfaToken, String otp) {
+        // Extract username from MFA token
+        String username = jwtService.extractUsername(mfaToken);
+        
+        // Validate that it's an MFA token
+        if (!jwtService.isMfaToken(mfaToken)) {
+            throw new RuntimeException("Invalid MFA token");
+        }
+
+        // Validate OTP
+        if (!otpService.validateOtp(username, otp)) {
+            throw new RuntimeException("Invalid or expired OTP");
+        }
+
+        // Get user from database
+        User user = userRepository.findUserByUsername(username)
+                .orElseThrow(() -> new UsernameWrongException("User not found"));
+
+        // Clear the OTP after successful validation
+        otpService.clearOtp(username);
+
+        // Generate final JWT without MFA claim
+        String jwt = jwtService.generateToken(user);
 
         return new AuthResponse(jwt);
     }
