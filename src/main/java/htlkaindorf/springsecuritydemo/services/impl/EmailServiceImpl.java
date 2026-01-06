@@ -61,36 +61,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendOtpEmail(String email, String otp) {
         MimeMessage msg = javaMailSender.createMimeMessage();
         
-        String htmlContent = String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .otp-box { background-color: #f4f4f4; border: 2px solid #007bff; padding: 20px; text-align: center; margin: 20px 0; }
-                    .otp-code { font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 5px; }
-                    .warning { color: #dc3545; font-size: 14px; margin-top: 20px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h2>Two-Factor Authentication</h2>
-                    <p>Hello,</p>
-                    <p>You have requested to sign in. Please use the following One-Time Password (OTP) to complete your authentication:</p>
-                    <div class="otp-box">
-                        <div class="otp-code">%s</div>
-                    </div>
-                    <p>This OTP is valid for 5 minutes.</p>
-                    <div class="warning">
-                        <p><strong>Important:</strong> Do not share this code with anyone. If you did not request this code, please ignore this email.</p>
-                    </div>
-                    <p>Best regards,<br>SpringSecurityDemo Team</p>
-                </div>
-            </body>
-            </html>
-            """, otp);
+        String htmlContent = emailTemplateService.buildOtpEmail(otp);
 
         try {
             MimeMessageHelper helper = new MimeMessageHelper(msg, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, "UTF-8");
