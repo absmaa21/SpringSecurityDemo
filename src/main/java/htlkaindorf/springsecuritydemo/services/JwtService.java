@@ -11,4 +11,8 @@ public interface JwtService {
 
     String extractUsername(String token);
 
+    String generateMfaToken(User user);
+
+    boolean isMfaToken(String token);
+
 }

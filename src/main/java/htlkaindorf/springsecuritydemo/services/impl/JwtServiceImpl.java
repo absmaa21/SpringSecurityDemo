@@ -25,6 +25,9 @@ public class JwtServiceImpl implements JwtService {
     @Value("${application.security.jwt.expiration}")
     private long jwtExpirationMs;
 
+    @Value("${application.mfa.otp.expiration}")
+    private long otpExpirationMs;
+
 
     @Override
     public String generateToken(User user) {
@@ -46,6 +49,23 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
+    }
+
+    @Override
+    public String generateMfaToken(User user) {
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("type", "mfa")
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + otpExpirationMs))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    @Override
+    public boolean isMfaToken(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.get("type").equals("mfa");
     }
 
     private Claims extractAllClaims(String token) {

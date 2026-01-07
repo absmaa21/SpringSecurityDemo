@@ -25,4 +25,12 @@ public class EmailTemplateService {
         return templateEngine.process("/reset-pw", context);
     }
 
+    public String buildOtpEmail(String email, Integer otp, String url) {
+        Context context = new Context();
+        context.setVariable("name", email.split("@")[0]);
+        context.setVariable("otp", otp);
+        context.setVariable("verificationUrl", url);
+        return templateEngine.process("/otp", context);
+    }
+
 }

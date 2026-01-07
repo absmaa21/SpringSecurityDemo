@@ -57,5 +57,24 @@ public class EmailServiceImpl implements EmailService {
 
     }
 
+    @Override
+    public void sendOtpEmail(String email, Integer otp) {
+
+        MimeMessage msg = javaMailSender.createMimeMessage();
+        String mfaUrl = "http://localhost:8080/api/auth/otp-signin";
+        String htmlContent = emailTemplateService.buildOtpEmail(email, otp, mfaUrl);
+
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(msg, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, "UTF-8");
+            helper.setTo(email);
+            helper.setSubject("One-Time Password");
+            helper.setText(htmlContent, true);
+            javaMailSender.send(msg);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
 
 }

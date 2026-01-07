@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Your verification code</title>
+
+    <style>
+        /* Inlined styles work best for email clients */
+        .container {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            line-height: 1.4;
+        }
+
+        .otp-box {
+            margin: 24px 0;
+            text-align: center;
+        }
+
+        .otp-code {
+            display: inline-block;
+            background-color: #f4f4f4;
+            padding: 16px 24px;
+            font-size: 28px;
+            letter-spacing: 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .btn {
+            background-color: #4CAF50;
+            color: white !important;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+        .note {
+            color: #555;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h2>Hello <span th:text="${name}">User</span>,</h2>
+
+    <p>
+        Use the following one-time password (OTP) to complete your sign-in.
+    </p>
+
+    <div class="otp-box">
+        <span class="otp-code" th:text="${otp}">123456</span>
+    </div>
+
+    <p class="note">
+        This code is valid for a limited time. Please do not share it with anyone.
+    </p>
+
+    <p>
+        If you’re unable to enter the code, you can also verify using the link below:
+    </p>
+
+    <p style="margin: 20px 0; text-align: center;">
+        <a th:href="${verificationUrl}" class="btn">Verify Sign-In</a>
+    </p>
+
+    <p class="note">
+        If the button doesn’t work, copy this link into your browser:
+    </p>
+
+    <p>
+        <a th:href="${verificationUrl}" th:text="${verificationUrl}">
+            If you see this, something went wrong.
+        </a>
+    </p>
+
+    <p class="note">
+        If you did not attempt to sign in, please secure your account immediately.
+    </p>
+
+    <br>
+
+    <p>
+        Kind regards,<br>
+        POS Company
+    </p>
+
+</div>
+</body>
+</html>

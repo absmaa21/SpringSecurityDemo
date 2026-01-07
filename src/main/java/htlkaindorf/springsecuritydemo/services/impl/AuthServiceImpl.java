@@ -2,19 +2,17 @@ package htlkaindorf.springsecuritydemo.services.impl;
 
 import htlkaindorf.springsecuritydemo.auth.AuthRequest;
 import htlkaindorf.springsecuritydemo.auth.AuthResponse;
+import htlkaindorf.springsecuritydemo.auth.MfaRequest;
+import htlkaindorf.springsecuritydemo.auth.MfaResponse;
+import htlkaindorf.springsecuritydemo.entity.MfaToken;
 import htlkaindorf.springsecuritydemo.entity.Role;
 import htlkaindorf.springsecuritydemo.entity.User;
 import htlkaindorf.springsecuritydemo.entity.VerificationToken;
-import htlkaindorf.springsecuritydemo.exceptions.EmailVerificationTokenExpired;
-import htlkaindorf.springsecuritydemo.exceptions.PasswordWrongException;
-import htlkaindorf.springsecuritydemo.exceptions.UserAlreadyExistsAuthenticationException;
-import htlkaindorf.springsecuritydemo.exceptions.UsernameWrongException;
+import htlkaindorf.springsecuritydemo.exceptions.*;
+import htlkaindorf.springsecuritydemo.repositories.MfaRepository;
 import htlkaindorf.springsecuritydemo.repositories.UserRepository;
 import htlkaindorf.springsecuritydemo.repositories.VerificationTokenRepository;
-import htlkaindorf.springsecuritydemo.services.AuthService;
-import htlkaindorf.springsecuritydemo.services.EmailService;
-import htlkaindorf.springsecuritydemo.services.EmailVerificationService;
-import htlkaindorf.springsecuritydemo.services.JwtService;
+import htlkaindorf.springsecuritydemo.services.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,9 +35,11 @@ public class AuthServiceImpl implements AuthService {
     private final EmailVerificationService emailVerificationService;
     private final EmailService emailService;
     private final VerificationTokenRepository verificationTokenRepository;
+    private final MfaRepository mfaRepository;
+    private final MfaService mfaService;
 
     @Override
-    public AuthResponse login(AuthRequest request) {
+    public MfaResponse login(AuthRequest request) {
 
         Optional<User> foundUser = userRepository.findUserByUsername(request.getUsername());
 
@@ -58,9 +58,9 @@ public class AuthServiceImpl implements AuthService {
 
         UserDetails user = (UserDetails) authentication.getPrincipal();
 
-        String jwt = jwtService.generateToken((User) user);
+        String jwt = mfaService.generateMfaToken((User) user);
 
-        return new AuthResponse(jwt);
+        return new MfaResponse(jwt);
     }
 
     public void register(AuthRequest request) {
@@ -93,6 +93,24 @@ public class AuthServiceImpl implements AuthService {
         vToken.getUser().setEnabled(true);
         userRepository.save(vToken.getUser());
         verificationTokenRepository.delete(vToken);
+    }
+
+    @Override
+    public AuthResponse otpLogin(MfaRequest request) {
+
+        Optional<MfaToken> mfaToken = mfaRepository.findById(request.getToken());
+        Optional<User> user = userRepository.findUserByUsername(jwtService.extractUsername(request.getToken()));
+
+        if (mfaToken.isEmpty() || user.isEmpty() || jwtService.isTokenValid(mfaToken.get().getToken(), user.get())) {
+            throw new MfaTokenInvalid("The given token for MFA is not valid or expired!");
+        }
+
+        if (mfaToken.get().getOneTimePassword().equals(request.getOtp())) {
+            throw new MfaOtpInvalid("The given OTP is not matching!");
+        }
+
+        String token = jwtService.generateToken(user.get());
+        return new AuthResponse(token);
     }
 
 }
