@@ -1,7 +1,6 @@
 package htlkaindorf.springsecuritydemo.controller;
 
-import htlkaindorf.springsecuritydemo.auth.AuthRequest;
-import htlkaindorf.springsecuritydemo.auth.AuthResponse;
+import htlkaindorf.springsecuritydemo.auth.*;
 import htlkaindorf.springsecuritydemo.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,14 +15,14 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(
+    public ResponseEntity<MfaResponse> login(
             @Valid @RequestBody AuthRequest authRequest
     ){
         return ResponseEntity.ok(authService.signin(authRequest));
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<AuthResponse> signin(
+    public ResponseEntity<MfaResponse> signin(
             @Valid @RequestBody AuthRequest authRequest
     ){
         return ResponseEntity.ok(authService.signin(authRequest));
@@ -59,4 +58,10 @@ public class AuthController {
         return ResponseEntity.ok("Successfully verified!");
     }
 
+    @GetMapping("refresh-token")
+    public ResponseEntity<AccessTokenResponse> refreshToken(
+            @Valid @RequestBody RefreshTokenRequest refreshRequest
+            ) {
+        return ResponseEntity.ok(authService.refresh(refreshRequest));
+    }
 }

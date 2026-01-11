@@ -39,6 +39,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String jwt = authHeader.substring(7);
+
+        if (!jwtService.isAccessToken(jwt)) {
+            log.info("Token given but not of type access!");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String username = jwtService.extractUsername(jwt);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

@@ -1,13 +1,14 @@
 package htlkaindorf.springsecuritydemo.auth;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class AuthResponse {
+public class RefreshTokenRequest {
 
+    @NotBlank
     private String refreshToken;
-    private String accessToken;
 
 }

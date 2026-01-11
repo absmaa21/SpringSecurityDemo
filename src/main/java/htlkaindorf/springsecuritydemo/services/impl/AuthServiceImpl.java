@@ -1,15 +1,10 @@
 package htlkaindorf.springsecuritydemo.services.impl;
 
-import htlkaindorf.springsecuritydemo.auth.AuthRequest;
-import htlkaindorf.springsecuritydemo.auth.AuthResponse;
+import htlkaindorf.springsecuritydemo.auth.*;
 import htlkaindorf.springsecuritydemo.entity.Role;
 import htlkaindorf.springsecuritydemo.entity.User;
 import htlkaindorf.springsecuritydemo.entity.VerificationToken;
-import htlkaindorf.springsecuritydemo.exceptions.AccountLockedException;
-import htlkaindorf.springsecuritydemo.exceptions.EmailVerificationTokenExpired;
-import htlkaindorf.springsecuritydemo.exceptions.PasswordWrongException;
-import htlkaindorf.springsecuritydemo.exceptions.UserAlreadyExistsAuthenticationException;
-import htlkaindorf.springsecuritydemo.exceptions.UsernameWrongException;
+import htlkaindorf.springsecuritydemo.exceptions.*;
 import htlkaindorf.springsecuritydemo.repositories.UserRepository;
 import htlkaindorf.springsecuritydemo.repositories.VerificationTokenRepository;
 import htlkaindorf.springsecuritydemo.services.AuthService;
@@ -23,6 +18,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -56,20 +52,13 @@ public class AuthServiceImpl implements AuthService {
             throw new PasswordWrongException("Invalid Password.");
         }
 
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                request.getUsername(),
-                request.getPassword()
-        ));
+        String refresh = jwtService.generateRefreshToken(foundUser.get());
+        String access = jwtService.generateAccessToken(foundUser.get());
 
-        UserDetails user = (UserDetails) authentication.getPrincipal();
-
-        String jwt = jwtService.generateToken((User) user);
-
-        return new AuthResponse(jwt);
+        return new AuthResponse(refresh, access);
     }
-
     @Override
-    public AuthResponse signin(AuthRequest request) {
+    public MfaResponse signin(AuthRequest request) {
         // Check if account is locked
         if (loginAttemptService.isBlocked(request.getUsername())) {
             throw new AccountLockedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
@@ -105,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
             // Login succeeded, reset failed attempts
             loginAttemptService.loginSucceeded(request.getUsername());
 
-            return new AuthResponse(mfaToken);
+            return new MfaResponse(mfaToken);
         } catch (Exception e) {
             loginAttemptService.loginFailed(request.getUsername());
             throw e;
@@ -135,9 +124,10 @@ public class AuthServiceImpl implements AuthService {
         otpService.clearOtp(username);
 
         // Generate final JWT without MFA claim
-        String jwt = jwtService.generateToken(user);
+        String refresh = jwtService.generateRefreshToken(user);
+        String access = jwtService.generateAccessToken(user);
 
-        return new AuthResponse(jwt);
+        return new AuthResponse(refresh, access);
     }
 
     public void register(AuthRequest request) {
@@ -170,6 +160,27 @@ public class AuthServiceImpl implements AuthService {
         vToken.getUser().setEnabled(true);
         userRepository.save(vToken.getUser());
         verificationTokenRepository.delete(vToken);
+    }
+
+    @Override
+    public AccessTokenResponse refresh(RefreshTokenRequest request) {
+
+        String username = jwtService.extractUsername(request.getRefreshToken());
+
+        if (!jwtService.isRefreshToken(request.getRefreshToken()))
+            throw new AuthorizationTokenExpiredException("Given token cannot be used for refresh.");
+
+        Optional<User> foundUser = userRepository.findUserByUsername(username);
+
+        if (foundUser.isEmpty())
+            throw new UsernameNotFoundException("Username not found!");
+
+        if (!jwtService.isTokenValid(request.getRefreshToken(), foundUser.get()))
+            throw new AuthorizationTokenExpiredException("Refresh Token is expired!");
+
+        String access = jwtService.generateAccessToken(foundUser.get());
+
+        return new AccessTokenResponse(access);
     }
 
 }

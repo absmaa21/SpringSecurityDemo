@@ -24,17 +24,32 @@ public class JwtServiceImpl implements JwtService {
     @Value("${application.security.jwt.secret}")
     private String secretKey;
 
-    @Value("${application.security.jwt.expiration}")
-    private long jwtExpirationMs;
+    @Value("${application.security.jwt.refresh.expiration}")
+    private long jwtRefreshExpirationMs;
+
+    @Value("${application.security.jwt.access.expiration}")
+    private long jwtAccessExpirationMs;
 
 
     @Override
-    public String generateToken(User user) {
+    public String generateRefreshToken(User user) {
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("type", "refresh")
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtRefreshExpirationMs))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    @Override
+    public String generateAccessToken(User user) {
         return Jwts.builder()
                 .subject(user.getUsername())
                 .claim("role", user.getRole().name())
+                .claim("type", "access")
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .expiration(new Date(System.currentTimeMillis() + jwtAccessExpirationMs))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -67,6 +82,30 @@ public class JwtServiceImpl implements JwtService {
             return false;
         }
     }
+
+    @Override
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Object type = claims.get("type");
+            return type != null && type.equals("refresh");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Object type = claims.get("type");
+            return type != null && type.equals("access");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
 
     @Override
     public String extractUsername(String token) {
