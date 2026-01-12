@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/*").permitAll() // Login & Registr; /api/auth/login -> not  /api/auth/a/login
+                        .requestMatchers("/api/auth/otp-signin").authenticated() // benötigt weil es vorher mit * erlaubt wird
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/maintenance/**").hasRole(Role.MANAGER.name())
                         .anyRequest().authenticated()

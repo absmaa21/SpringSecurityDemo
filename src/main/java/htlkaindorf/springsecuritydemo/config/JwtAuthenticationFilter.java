@@ -34,8 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.info("No token in request: signin, signup, public, ...");
             filterChain.doFilter(request, response);
-            return;
             // Ab hier würde der response gehandelt werden
+            return;
         }
 
         String jwt = authHeader.substring(7);
